@@ -1,6 +1,7 @@
 from flask import Flask, send_from_directory
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS #comment this on deployment
+import json
 
 app = Flask(__name__, static_url_path='', static_folder='frontend/build')
 CORS(app) #comment this on deployment
@@ -17,7 +18,7 @@ def helloWorld():
         'message': "Hello Api Handler!"
     }
 
-@app.route('/update', methods=['POST'])
+@app.route('/update', methods=['POST','DELETE'])
 def updateTodo():
     parser = reqparse.RequestParser()
     parser.add_argument('type', type=str)
@@ -29,18 +30,27 @@ def updateTodo():
 
     request_type = args['type']
     request_msg = args['message']
-    
+    data = []
     # currently just returning the request straight back
-    if request_msg:
-        ret_msg = "Your Message: {}".format(request_msg)
-    else:
-        ret_msg = "No Message"
+    if request_type == "create":
+        with open('json.json') as json_file:
+            data = json.load(json_file)
+            data.append({'todo':request_msg})
+            with open('json.json', 'w') as outfile:
+                json.dump(data, outfile)
+            print(data)
 
-    if ret_msg:
-        ret_type = "Your Type: {}".format(request_type)
-    else:
-        ret_type = "No Type"
+    elif request_type == "delete":
+        with open('json.json') as json_file:
+            data = json.load(json_file)
+            for key in data:
+                if key['todo'] == request_msg:
+                    data.remove(key)
+            with open('json.json', 'w') as outfile:
+                json.dump(data, outfile)
+            print(data)
+
     
-    final_ret = {"status": "Success", "message": ret_msg, "type": ret_type}
+    final_ret = {"status": "Success", "message": data}
 
     return final_ret
